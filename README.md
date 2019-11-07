@@ -1,2 +1,2 @@
 # popProjApp
-Temporary repo for development of the population projections app
+Repository for development of the population projections app
