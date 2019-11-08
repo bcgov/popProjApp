@@ -10,3 +10,4 @@
 *.csv
 /app/data/*
 /sandbox/*
+/analysis/inputs/*.txt
