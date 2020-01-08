@@ -17,6 +17,7 @@ library(rsconnect)  ## to connect to shiny.io dashboard to deploy app
 update_data = TRUE     ## set to TRUE if you need to update the underlying data, otherwise set to FALSE
 
 ## update folder path below ** keep slashes as is to work in R **
+#base_folder <- "//SFP.IDIR.BCGOV/S152/S52004/PEOPLEPROJECTIONS/P19/ACCESSDATABASE/WEB/Estimate 2018-19/"
 base_folder <- here("analysis", "inputs", paste0("/"))
 
 ## variables needed to read in Excel/csv data, if updating data
@@ -53,6 +54,6 @@ if(update_data == TRUE) {
 ## In app.R, click the publish button (blue icon), and choose "Publish Application".
 ## Type in a title (must be at least 4 characters). Publish.
 
-#rsconnect::deployApp(appName = "popProjApp", appId = 1421553)  ## command to deploy app to shiny.io dashboard; account: bcstats
+#rsconnect::deployApp(appName = "popApp", appId = 958258)  ## command to deploy app to shiny.io dashboard; account: bcstats
 
 ### DONE ----
