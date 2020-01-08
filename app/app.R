@@ -13,7 +13,7 @@
 #####
 # METADATA for app
 dataVersion <- "PEOPLE 2019"
-updateDate <- "August 2019"
+updateDate <- "January 2020"
 
 ## load libraries  ----
 ## installs any missing packages this script uses
