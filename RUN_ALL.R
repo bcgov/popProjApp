@@ -22,9 +22,10 @@ base_folder <- here("analysis", "inputs", paste0("/"))
 
 ## variables needed to read in Excel/csv data, if updating data
 file_name <- "Combined"   ## file name prefix ("1" or "5" are added to file_name in function later)
-#file_type <- "xlsx"      ## "xlsx" or "csv"
+# file_type <- "xlsx"     ## "xlsx" or "csv"
 file_type <- "csv"        ## "xlsx" or "csv"
-mysheet <- "DATA"         ## name of sheet with data
+# mysheet <- "DATA"       ## name of sheet with data
+mysheet <- "Combined1"       ## name of sheet with data
 col_RegionType <- "TYPE"  ## case-sensitive name of Region Type column
 col_Region <- "TYPEID"    ## case-sensitive name of Region number column
 col_Year <- "YR"          ## case-sensitive name of Year column
@@ -36,13 +37,15 @@ col_Total <- "TOTAL"      ## case-sensitive name of Total column
 if(update_data == TRUE) {
 
   ## don't change order of data_cols or final_cols
-  data_cols <- c(col_RegionType, col_Region, col_Year, col_Gender, col_Total)
-  final_cols<- c("Region.Type", "Region", "Year", "Gender", "Total")
+  data_cols  <- c(col_RegionType, col_Region, col_Year, col_Gender, col_Total)
+  final_cols <- c("Region.Type", "Region", "Year", "Gender", "Total")
   
   ## requires: csv or xlsx files in base_folder
   ## assumes: 5 columns (Type, Region, Year, Gender, Total), age columns ("A90PL" & "LT1" in 5-yr)
   ## will make lookup.csv if it doesn't exist
   source(here("analysis", "get_data.R"))
+  
+  ## output is new data1.rds in app\data and a copy as data1_YYYY-MM-DD.rds in app\data\Archive\
   
 }
 
