@@ -9,10 +9,17 @@
 #
 # To deploy an update, update code and data, then load >library(rsconnect), set working
 # directory to app.R directory and >deployApp(appName = "popProjApp", appId = 1421553)
+# To run (after updating code and data):
+# 1. in Files pane, click on "More", then "Set As Working Directory"
+# 2. click on shiny icon (blue eye) at top right of Script window, "Manage Accounts" to log into shinyapps.io
+# 3. test before actual deployment: click Run App at top of Script window (or type shiny::runApp('app.R') in console
+# 4. deploy an update: (load library(rsconnect), set working directory to app.R directory as in step 1 above)
+#        and deployApp(appName = "popProjApp", appId = 1421553)
+
 
 #####
 # METADATA for app
-dataVersion <- "PEOPLE 2019"
+dataVersion <- "PEOPLE 2020"    ## dataVersion <- "PEOPLE 2019"
 
 ## load libraries  ----
 ## installs any missing packages this script uses
@@ -23,9 +30,9 @@ if (!require('rsconnect')) install.packages('rsconnect')
 if (!require('DT')) install.packages('DT')
 if (!require('GAlogger')) devtools::install_github("bnosac/GAlogger")
 
-ga_set_tracking_id("UA-150850915-2")
-ga_set_approval(consent = TRUE)
-ga_collect_pageview(page = "/popProjApp")
+GAlogger::ga_set_tracking_id("UA-150850915-2")
+GAlogger::ga_set_approval(consent = TRUE)
+GAlogger::ga_collect_pageview(page = "/popProjApp")
 
 ## read data ----
 data1 <- readRDS("data/data1.rds")  ## by single-year intervals
