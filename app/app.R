@@ -4,7 +4,6 @@
 # Find out more about building applications with Shiny here:
 #
 #   http://shiny.rstudio.com/
-#
 #   http://rstudio.github.io/shinydashboard/get_started.html
 #
 # To deploy an update, update code and data, then load >library(rsconnect), set working
@@ -15,11 +14,14 @@
 # 3. test before actual deployment: click Run App at top of Script window (or type shiny::runApp('app.R') in console
 # 4. deploy an update: (load library(rsconnect), set working directory to app.R directory as in step 1 above)
 #        and deployApp(appName = "popProjApp", appId = 1421553)
+# URL: https://bcstats.shinyapps.io/popProjApp/
 
-
-#####
-# METADATA for app
+## metadata for app ----
 dataVersion <- "PEOPLE 2020"    ## dataVersion <- "PEOPLE 2019"
+methodsPDF <- "<a href='https://www2.gov.bc.ca/assets/gov/data/statistics/people-population-community/population/pop_small_area_population_projections_people_1999.pdf'>
+Small Area Population Projections (P.E.O.P.L.E.) (1999)</a>"
+githubLink <- "<a href='https://github.com/bcgov/popProjApp'>https://github.com/bcgov/popProjApp</a>"
+
 
 ## load libraries  ----
 ## installs any missing packages this script uses
@@ -37,6 +39,10 @@ GAlogger::ga_collect_pageview(page = "/popProjApp")
 ## read data ----
 data1 <- readRDS("data/data1.rds")  ## by single-year intervals
 
+initVals <- c("Local Health Area", "British Columbia", max(data1$Year), "T") ## c(Region.Type, Region.Name, Year, Gender)
+
+
+## Define ui layout ----
 # UI demonstrating column layouts
 ui <- fluidPage(title = "BC Population Projections",
   theme = "bootstrap.css",
@@ -67,7 +73,9 @@ ui <- fluidPage(title = "BC Population Projections",
                   style="font-size:14px; color:#494949"),
                   HTML(paste0("<p>Don't see what you need? See our Custom Population Products 
                               <b><a href='https://www2.gov.bc.ca/gov/content/data/about-data-management/bc-stats/custom-products-services/custom-population-products'>page</a></b>
-                              for more information.</p>"))
+                              for more information.</p>")),
+                  HTML(paste0("<p>Methods documentation is available in this PDF: <b>", 
+                              methodsPDF, "</b>.</p>"))
 
            ),
            br()
@@ -153,11 +161,16 @@ ui <- fluidPage(title = "BC Population Projections",
                  br(),
                  tags$fieldset(
                  tags$legend(h3("Notes")),
-                 HTML(paste0("<ul><li>All figures are as of July 1 and are adjusted for census net undercoverage (including adjustment for incompletely enumerated Indian Reserves).</li>",
-                             "<li>As of January 2020, Local Health Area (LHA) numbering has been updated to reflect the latest version of the boundaries released by the Ministry of Health. Translation between old and new LHA identifiers can be downloaded <b>", 
+                 HTML(paste0("<ul><li>All figures are as of July 1 and are adjusted for census net 
+                             undercoverage (including adjustment for incompletely enumerated Indian Reserves).</li>",
+                             "<li>As of January 2020, Local Health Area (LHA) numbering has been 
+                             updated to reflect the latest version of the boundaries released by the 
+                             Ministry of Health. Translation between old and new LHA identifiers can be downloaded <b>", 
                              downloadLink(outputId = "downloadTranslation", label = "here"), "</b>.</li>",
                              "<li>Data obtained through this application is distributed under the ", 
-                             "<b><a href='https://www2.gov.bc.ca/gov/content/data/open-data/open-government-licence-bc'>Open Government License</a></b>.</li></ul><br>"))
+                             "<b><a href='https://www2.gov.bc.ca/gov/content/data/open-data/open-government-licence-bc'>Open Government License</a></b>.</li>",
+                             "<li>The GitHub repo for this app is: <b>", githubLink, "</b>.</li>",
+                             "</ul><br>"))
                )
              )
            )
@@ -194,8 +207,8 @@ server <- function(input, output, session) {
     selectInput(inputId = "Region.Type",
                 label = h4("Select a region type"),
                 choices = unique(data1$Region.Type),
-                selected = "Local Health Area"
-                , selectize = FALSE, size = 10    ## forces all 10 options to be shown at once (not drop-down)
+                selected = initVals[1], ## "Local Health Area", 
+                selectize = FALSE, size = 10    ## forces all 10 options to be shown at once (not drop-down)
                 )
   })
 
@@ -220,7 +233,9 @@ server <- function(input, output, session) {
     
     updateSelectInput(session,
                       inputId = "Region.Name",
-                      choices = choices_list)
+                      choices = choices_list,
+                      selected = initVals[2] ## "British Columbia"  ## default selection: BC
+                      )
   })
 
   ## select Year(s), multiples OK
@@ -232,15 +247,6 @@ server <- function(input, output, session) {
                 selectize = FALSE, size = 7)
   })
 
-  ## select Sex(es), multiples OK
-  output$Gender <- renderUI({
-    selectInput(inputId = "Gender",
-                label = h4("Select gender(s)"),
-                choices = c("Males" = "M", "Females" = "F", "Totals" = "T"),
-                multiple = TRUE,
-                selectize = FALSE, size = 3) ## QQ: Is 4 a minimum? It's ignoring size=3
-  })
-  
   ## update Year(s) choices based on selected Region.Type
   observeEvent(input$Region.Type,{
     
@@ -248,9 +254,21 @@ server <- function(input, output, session) {
     
     updateSelectInput(session,
                       inputId = "Year",
-                      choices = unique_year)
+                      choices = unique_year,
+                      selected = initVals[3] ## max(data1$Year)  ## default selection: max year
+                      )
   })
-
+  
+  ## select Sex(es), multiples OK
+  output$Gender <- renderUI({
+    selectInput(inputId = "Gender",
+                label = h4("Select gender(s)"),
+                choices = c("Males" = "M", "Females" = "F", "Totals" = "T"),
+                selected = initVals[4], ## "T",  ## default selection: Totals
+                multiple = TRUE,
+                selectize = FALSE, size = 3) ## QQ: Is 4 a minimum? It's ignoring size=3
+  })
+  
   ## select type of age group, just one
   output$Age_Type <- renderUI({
     radioButtons(inputId = "Age_Type:",
@@ -269,7 +287,9 @@ server <- function(input, output, session) {
   ## reactive resetButton send analytics when reset ----
   observeEvent(input$resetButton, {
     
-    ga_collect_event(event_category = "resetButton", event_label = "Reset", event_action = "Reset application")
+    ga_collect_event(event_category = "resetButton", 
+                     event_label = "Reset", 
+                     event_action = "Reset application")
     
     ## just reload the session
     session$reload()
@@ -281,14 +301,18 @@ server <- function(input, output, session) {
   
   observeEvent(rv$download_flag, {
     
-    ga_collect_event(event_category = "downloadButton", event_label = paste0("Download: ", input$Age_Type, ", ", input$Region.Type), event_action = "Download data")
+    ga_collect_event(event_category = "downloadButton", 
+                     event_label = paste0("Download: ", input$Age_Type, ", ", input$Region.Type), 
+                     event_action = "Download data")
     
   }, ignoreInit = TRUE)
   
   ## reactive send analytics when query table ----
   observeEvent(input$goButton, {
     
-    ga_collect_event(event_category = "goButton", event_label = paste0("Query: ", input$Age_Type, ", ", input$Region.Type), event_action = "Generate data")
+    ga_collect_event(event_category = "goButton", 
+                     event_label = paste0("Query: ", input$Age_Type, ", ", input$Region.Type), 
+                     event_action = "Generate data")
     
   })
   
@@ -434,7 +458,7 @@ server <- function(input, output, session) {
       data_df()
       
     },
-    filter="none",
+    filter = "none",
     ## table options: https://shiny.rstudio.com/articles/datatables.html
     options = list(
       pageLength = 10,       ## show only X rows/page; https://datatables.net/reference/option/pageLength
