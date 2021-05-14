@@ -2,7 +2,6 @@
 # the 'Run App' button above.
 #
 # Find out more about building applications with Shiny here:
-#
 #   http://shiny.rstudio.com/
 #   http://rstudio.github.io/shinydashboard/get_started.html
 #
@@ -14,7 +13,8 @@
 # 3. test before actual deployment: click Run App at top of Script window (or type shiny::runApp('app.R') in console
 # 4. deploy an update: (load library(rsconnect), set working directory to app.R directory as in step 1 above)
 #        and deployApp(appName = "popProjApp", appId = 1421553)
-# URL: https://bcstats.shinyapps.io/popProjApp/
+# 
+# https://bcstats.shinyapps.io/popProjApp/
 
 ## metadata for app ----
 dataVersion <- "PEOPLE 2020"    ## dataVersion <- "PEOPLE 2019"
@@ -39,7 +39,8 @@ GAlogger::ga_collect_pageview(page = "/popProjApp")
 ## read data ----
 data1 <- readRDS("data/data1.rds")  ## by single-year intervals
 
-initVals <- c("Local Health Area", "British Columbia", max(data1$Year), "T") ## c(Region.Type, Region.Name, Year, Gender)
+initVals <- c("Local Health Area", "British Columbia", max(data1$Year), 
+              "M", "F", "T") ## c(Region.Type, Region.Name, Year, Gender)
 
 
 ## Define ui layout ----
@@ -208,7 +209,7 @@ server <- function(input, output, session) {
     selectInput(inputId = "Region.Type",
                 label = h4("Select a region type"),
                 choices = unique(data1$Region.Type),
-                selected = initVals[1], ## "Local Health Area", 
+                selected = initVals[1],         ## default selection: "Local Health Area", 
                 selectize = FALSE, size = 10    ## forces all 10 options to be shown at once (not drop-down)
                 )
   })
@@ -235,7 +236,7 @@ server <- function(input, output, session) {
     updateSelectInput(session,
                       inputId = "Region.Name",
                       choices = choices_list,
-                      selected = initVals[2] ## "British Columbia"  ## default selection: BC
+                      selected = initVals[2] ## default selection: "British Columbia"
                       )
   })
 
@@ -256,7 +257,7 @@ server <- function(input, output, session) {
     updateSelectInput(session,
                       inputId = "Year",
                       choices = unique_year,
-                      selected = initVals[3] ## max(data1$Year)  ## default selection: max year
+                      selected = initVals[3]  ## default selection: max year
                       )
   })
   
@@ -265,7 +266,7 @@ server <- function(input, output, session) {
     selectInput(inputId = "Gender",
                 label = h4("Select gender(s)"),
                 choices = c("Males" = "M", "Females" = "F", "Totals" = "T"),
-                selected = initVals[4], ## "T",  ## default selection: Totals
+                selected = initVals[-(1:3)], ## default selection: all ("M"ales, "F"emales, "T"otals)
                 multiple = TRUE,
                 selectize = FALSE, size = 3) ## QQ: Is 4 a minimum? It's ignoring size=3
   })
@@ -293,7 +294,7 @@ server <- function(input, output, session) {
     data1[data1$Region.Type == initVals[1], ] %>%
       filter(Region.Name == initVals[2]) %>%
       filter(Year == initVals[3]) %>%
-      filter(Gender == initVals[4]) %>%
+      # filter(Gender == initVals[4]) %>%
       select(Region, !!initVals[1] := Region.Name, Year, Gender, Total)
   }
   
@@ -359,7 +360,7 @@ server <- function(input, output, session) {
   
   
   ## reactive data table and download ----
-  ## Create reactive values for input data to create table and download data
+  ## create reactive values for input data to create table and download data
   data_df <- eventReactive(input$goButton, {
     ## with input$goButton in eventReactive(), nothing will happen until button clicked
     
