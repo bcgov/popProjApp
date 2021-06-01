@@ -5,23 +5,21 @@
 #   http://shiny.rstudio.com/
 #   http://rstudio.github.io/shinydashboard/get_started.html
 #
-# To deploy an update, update code and data, then load >library(rsconnect), set working
-# directory to app.R directory and >deployApp(appName = "popProjApp", appId = 1421553)
-# To run (after updating code and data):
-# 1. in Files pane, click on "More", then "Set As Working Directory"
-# 2. click on shiny icon (blue eye) at top right of Script window, "Manage Accounts" to log into shinyapps.io
-# 3. test before actual deployment: click Run App at top of Script window (or type shiny::runApp('app.R') in console
-# 4. deploy an update: (load library(rsconnect), set working directory to app.R directory as in step 1 above)
-#        and deployApp(appName = "popProjApp", appId = 1421553)
+# To test before deployment: click Run App at top of Script window 
+#   (or type shiny::runApp('app.R') in console)
+# 
+# To deploy an update:
+#   1. update code and data, and !! likely dataVersion !!
+#   2. load library(rsconnect)
+#   3. set working directory to app.R directory (setwd("I:/PEOPLEPROJECTIONS/00 - R_code/shiny_apps/Production/popProjApp/app"))
+#      (Or, in Files pane, in app folder, click on "More", then "Set As Working Directory")
+#   4. deployApp(appName = "popProjApp", appId = 1421553)
+#      (Or, click on shiny icon (blue eye) at top right of Script window, "Manage Accounts" to log into shinyapps.io)
 # 
 # https://bcstats.shinyapps.io/popProjApp/
 
 ## metadata for app ----
-dataVersion <- "PEOPLE 2020"    ## dataVersion <- "PEOPLE 2019"
-methodsPDF <- "<a href='https://www2.gov.bc.ca/assets/gov/data/statistics/people-population-community/population/pop_small_area_population_projections_people_1999.pdf'>
-Small Area Population Projections (P.E.O.P.L.E.) (1999)</a>"
-githubLink <- "<a href='https://github.com/bcgov/popProjApp'>https://github.com/bcgov/popProjApp</a>"
-
+dataVersion <- "PEOPLE 2020"
 
 ## load libraries  ----
 ## installs any missing packages this script uses
@@ -31,7 +29,9 @@ if (!require('shinydashboard')) install.packages('shinydashboard')
 if (!require('rsconnect')) install.packages('rsconnect')
 if (!require('DT')) install.packages('DT')
 if (!require('GAlogger')) devtools::install_github("bnosac/GAlogger")
+if (!require('markdown')) install.packages('markdown')
 
+## Google Analytics ----
 GAlogger::ga_set_tracking_id("UA-150850915-2")
 GAlogger::ga_set_approval(consent = TRUE)
 GAlogger::ga_collect_pageview(page = "/popProjApp")
@@ -39,9 +39,7 @@ GAlogger::ga_collect_pageview(page = "/popProjApp")
 ## read data ----
 data1 <- readRDS("data/data1.rds")  ## by single-year intervals
 
-initVals <- c("Local Health Area", "British Columbia", max(data1$Year), 
-              "M", "F", "T") ## c(Region.Type, Region.Name, Year, Gender)
-
+initVals <- c("Local Health Area", "British Columbia", max(data1$Year), "M", "F", "T") ## c(Region.Type, Region.Name, Year, Gender)
 
 ## Define ui layout ----
 # UI demonstrating column layouts
@@ -61,122 +59,153 @@ ui <- fluidPage(title = "BC Population Projections",
              )
            )
     ),
-    column(width=12,
-            tags$fieldset(
-                  tags$legend(h2("How to use the population projections application", style="margin-top:90px")),
-                  p("Select a region type, and then the region(s), year(s) and gender(s) of interest.
-                  Use the Ctrl or Shift key to select multiple entries. Then select whether you'd
-                  like results by single year of age, 5-year age groups, totals or your own custom age groupings. 
-                  Note that data is available from less than one year old (0) up to 90 years old and over (90). If you
-                  would like to specify your own custom age groups, select 'Custom Age Groups' and
-                  enter them in the boxes to the right as seen in the example below. Then click
-                  'Generate output'. You can view the results on screen or download a CSV file.",
-                  style="font-size:14px; color:#494949"),
-                  HTML(paste0("<p>Don't see what you need? See our Custom Population Products 
-                              <b><a href='https://www2.gov.bc.ca/gov/content/data/about-data-management/bc-stats/custom-products-services/custom-population-products'>page</a></b>
-                              for more information.</p>")),
-                  HTML(paste0("<p>Methods documentation is available in this PDF: <b>", 
-                              methodsPDF, "</b>.</p>"))
-
-           ),
-           br()
-    ),
     column(width = 12,
-           sidebarLayout(
-             sidebarPanel(style="background-color:#F2F2F2;",
-               tags$fieldset(
-                 tags$legend(h3("Data selection")),
-                 uiOutput("Region.Type"),
-                 uiOutput("Region.Name"),
-                 uiOutput("Year"),
-                 uiOutput("Gender")
-               ),
-               br(),
-               tags$fieldset(
-                 tags$legend(h4("Additional information")),
-                 HTML(paste0("Produced by BC Stats ", "<br>", "Data version: ", 
-                             dataVersion))
-               )
-             ),
-             mainPanel(
-               tags$fieldset(
-                 style = "margin-top:20px;",
-                 tags$legend(h3("Age format selection")),        
-                 column(width=12,
-                             column(width = 3,
+           style = "margin-top:100px",
+           
+           ## creating tabs here
+           tabsetPanel(
+             id = "tabs",
+             
+            ## Main tab ----
+            tabPanel(title = "Main",
+                     tags$head(tags$style(type='text/css', ".nav-tabs {font-size: 20px} ")),
+            
+                     sidebarLayout(
+                       sidebarPanel(style = "background-color:#F2F2F2;",
                                     tags$fieldset(
-                                      tags$legend(h4("Select type of age group")),
-                                      uiOutput("Age_Type")
-                                    )
-                                    ),  ## end of column
-                             column(width = 3, 
+                                      tags$legend(h3("Step 1: Select data")),
+                                      HTML("Use the Ctrl or Shift key to select multiple entries."),
+                                      br(),br(),
+                                      uiOutput("Region.Type"),
+                                      uiOutput("Region.Name"),
+                                      uiOutput("Year"),
+                                      uiOutput("Gender")
+                                    ),
+                                    br(),
                                     tags$fieldset(
-                                      tags$legend(h4("Custom age groups example")),
-                                      tableOutput(outputId = "example_table")
+                                      HTML(paste0("Produced by BC Stats ", "<br>", "Data version: ", 
+                                                  dataVersion))
                                     )
-                                    ),  ## end of column
-                             
-                            column(width=6,     
-                                tags$fieldset(
-                                  tags$legend(h4("Custom age groups")),
-                                br(),
-                                column(width = 6,
-                                          numericInput(inputId = "start1", label = "From - 1st", value = NA, min = 0, max = 99)
-                                          ), 
-                                column(width = 6,
-                                          numericInput(inputId = "end1", label = "To - 1st", value = NA, min = 0, max = 99)
-                                          ), 
-                                column(width = 6,
-                                       numericInput(inputId = "start2", label = "From - 2nd", value = NA, min = 0, max = 99)
-                                ), 
-                                column(width = 6,
-                                       numericInput(inputId = "end2", label = "To - 2nd", value = NA, min = 0, max = 99)
-                                ), 
-                                column(width = 6,
-                                       numericInput(inputId = "start3", label = "From - 3rd", value = NA, min = 0, max = 99)
-                                ), 
-                                column(width = 6,
-                                       numericInput(inputId = "end3", label = "To - 3rd", value = NA, min = 0, max = 99)
-                                ), 
-                                column(width = 6,
-                                       numericInput(inputId = "start4", label = "From - 4th", value = NA, min = 0, max = 99)
-                                ),
-                                column(width = 6,
-                                       numericInput(inputId = "end4", label = "To - 4th", value = NA, min = 0, max = 99)
-                                )
-                              )  ## end of fluidRow
+                       ),  ## end of sidebarPanel
+                       
+                       mainPanel(
+                         ## Age selection ----
+                         tags$fieldset(style = "margin-top:20px;",
+                                       tags$legend(h3("Step 2: Select age format")),
+                                       column(width = 12,
+                                              column(width = 3,
+                                                     tags$fieldset(tags$legend(h4("Select type of age group")),
+                                                                   uiOutput("Age_Type"))
+                                              ),  ## end of column
+                                              ## Conditional panels: only show if "custom" age type is selected
+                                              # https://shiny.rstudio.com/reference/shiny/1.0.5/conditionalPanel.html
+                                              column(width = 3, 
+                                                     conditionalPanel(
+                                                       condition = "input.Age_Type == 'custom'",
+                                                       tags$fieldset(tags$legend(h4("Custom age groups example"))),
+                                                       tableOutput(outputId = "example_table"))
+                                              ),  ## end of column
+                                              column(width = 6,
+                                                     conditionalPanel(
+                                                       condition = "input.Age_Type == 'custom'",
+                                                       tags$fieldset(tags$legend(h4("Custom age groups")),
+                                                                     br(),
+                                                                     column(width = 6,
+                                                                            numericInput(inputId = "start1", 
+                                                                                         label = "From - 1st", 
+                                                                                         value = NA, 
+                                                                                         min = 0, max = 99)),
+                                                                     column(width = 6,
+                                                                            numericInput(inputId = "end1", 
+                                                                                         label = "To - 1st", 
+                                                                                         value = NA, 
+                                                                                         min = 0, max = 99)), 
+                                                                     column(width = 6,
+                                                                            numericInput(inputId = "start2", 
+                                                                                         label = "From - 2nd", 
+                                                                                         value = NA, 
+                                                                                         min = 0, max = 99)), 
+                                                                     column(width = 6,
+                                                                            numericInput(inputId = "end2", 
+                                                                                         label = "To - 2nd", 
+                                                                                         value = NA, 
+                                                                                         min = 0, max = 99)), 
+                                                                     column(width = 6,
+                                                                            numericInput(inputId = "start3", 
+                                                                                         label = "From - 3rd", 
+                                                                                         value = NA, 
+                                                                                         min = 0, max = 99)), 
+                                                                     column(width = 6,
+                                                                            numericInput(inputId = "end3", 
+                                                                                         label = "To - 3rd", 
+                                                                                         value = NA, 
+                                                                                         min = 0, max = 99)), 
+                                                                     column(width = 6,
+                                                                            numericInput(inputId = "start4", 
+                                                                                         label = "From - 4th", 
+                                                                                         value = NA, 
+                                                                                         min = 0, max = 99)),
+                                                                     column(width = 6,
+                                                                            numericInput(inputId = "end4", 
+                                                                                         label = "To - 4th", 
+                                                                                         value = NA, 
+                                                                                         min = 0, max = 99))
+                                                       )  ## end of tags$fieldset
+                                                     )  ## end of conditionalPanel
+                                              )
+                                       )
+                         ),  ## end of tags$fieldset (Age selection)
+                         ## Actions and table ----
+                         br(),
+                         tags$fieldset(
+                           tags$legend(h3("Step 3: Action")),
+                           column(width=12,
+                                  actionButton(inputId = "goButton", label = "Generate output"),
+                                  actionButton(inputId = "resetButton", label = "Reset selection"),
+                                  downloadButton(outputId = "downloadData", label = "Download data as csv")
+                           )
+                         ),
+                         br(),br(),
+                         DTOutput("default_table"),  ## only shows until "Generate Output" is clicked (and again on reset)
+                         DTOutput("table"),
+                         br(),
+                         ## end of Actions and table
+
+                         ## Notes ----
+                         tags$fieldset(
+                         tags$legend(h3("Notes")),
+                         HTML(paste0("<ul><li>All figures are as of July 1 and are adjusted for 
+                                              census net undercoverage (including adjustment for 
+                                              incompletely enumerated Indian Reserves).</li>",
+                                     "<li>As of January 2020, Local Health Area (LHA) numbering has 
+                                          been updated to reflect the latest version of the boundaries 
+                                          released by the Ministry of Health. Translation between old 
+                                          and new LHA identifiers can be downloaded <b>", 
+                                          downloadLink(outputId = "downloadTranslation", label = "here"),
+                                          "</b>.</li>",
+                                     "<li>Don't see what you need? See our Custom 
+                                                        Population Products <b>
+                                                        <a href='https://www2.gov.bc.ca/gov/content/data/about-data-management/bc-stats/custom-products-services/custom-population-products'>page</a>
+                                                        </b> for more information.</li>","</ul><br>"))
+                         )  ## end of tags$fieldset (Notes)
+                         ## ----
+                       )  ## end of mainPanel
+                     )  ## end of sidbarLayout
+            ),  ## end of tabPanel "Main"
+            
+            ## Methods tab ----
+            tabPanel(title = "Methods",
+                     column(width = 12,
+                            style = "margin-top:25px",
+                            tags$fieldset(
+                              tags$legend(h3("Population Information")),
+                              includeMarkdown("Methods.md")
                             )
-                    )
-                  ),  ## end of fluidRow
-               br(),
-                 tags$fieldset(
-                   tags$legend(h3("Actions")),
-                   column(width=12,
-                          actionButton(inputId = "goButton", label = "Generate output"),
-                          actionButton(inputId = "resetButton", label = "Reset selection"),
-                          downloadButton(outputId = "downloadData", label = "Download data as csv")
-                   )
-                 ),
-                 br(),br(),
-                 DTOutput("default_table"),  ## only shows until "Generate Output" is clicked (and again on reset)
-                 DTOutput("table"),
-                 br(),
-                 tags$fieldset(
-                 tags$legend(h3("Notes")),
-                 HTML(paste0("<ul><li>All figures are as of July 1 and are adjusted for census net 
-                             undercoverage (including adjustment for incompletely enumerated Indian Reserves).</li>",
-                             "<li>As of January 2020, Local Health Area (LHA) numbering has been 
-                             updated to reflect the latest version of the boundaries released by the 
-                             Ministry of Health. Translation between old and new LHA identifiers can be downloaded <b>", 
-                             downloadLink(outputId = "downloadTranslation", label = "here"), "</b>.</li>",
-                             "<li>Data obtained through this application is distributed under the ", 
-                             "<b><a href='https://www2.gov.bc.ca/gov/content/data/open-data/open-government-licence-bc'>Open Government License</a></b>.</li>",
-                             "<li>The GitHub repo for this app is: <b>", githubLink, "</b>.</li>",
-                             "</ul><br>"))
-               )
-             )
-           )
-    ),
+                     )
+            ) ## end of tabPanel "Methods"
+           )  ## end of tabsetPanel
+    ), ## end of column
+    ## footer ----
     column(width = 12,
            style = "background-color:#003366; border-top:2px solid #fcba19;",
            
@@ -192,8 +221,9 @@ ui <- fluidPage(title = "BC Population Projections",
                 )
               )
              )
-    )
-  )
+    )  ## end of column "footer"
+    ## ----
+  )  ## end of fluidrow
 )
 
 ## Define server logic ----
@@ -318,13 +348,11 @@ server <- function(input, output, session) {
     pageLength = 10,       ## show only X rows/page; https://datatables.net/reference/option/pageLength
     lengthMenu = c(10, 20, 25, 50), ## choices of pageLength to display
     scrollX = TRUE,        ## allows horizontal scrolling; https://datatables.net/reference/option/scrollX
-    dom ="ltpi"
-  )
+    dom ="ltpi")
   )
   )
   
   ## note: showDefaultTable changes to FALSE whenever goButton is clicked in data_df
-  
   
   ## reactive resetButton send analytics when reset ----
   observeEvent(input$resetButton, {
@@ -362,14 +390,14 @@ server <- function(input, output, session) {
   ## reactive data table and download ----
   ## create reactive values for input data to create table and download data
   data_df <- eventReactive(input$goButton, {
+    
     ## with input$goButton in eventReactive(), nothing will happen until button clicked
     
     showDefaultTable(FALSE)  ## now hide initial default table
     
     ## A. set df as appropriate dataset depending on age group type chosen
     if(input$Age_Type == "Totals") {
-      df <- data1 %>%
-        select(Region, Region.Name, Region.Type, Year, Gender, Total)
+      df <- data1 %>% select(Region, Region.Name, Region.Type, Year, Gender, Total)
     }
 
     if(input$Age_Type == "Single Year Age Groups") {
@@ -377,7 +405,6 @@ server <- function(input, output, session) {
     }
 
     if(input$Age_Type == "5-year Age Groups") {
-      #df <- data5
       df <- data1 %>%
         mutate(`LT1` = `0`,
                `1-4` = `1` + `2` + `3` + `4`,
