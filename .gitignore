@@ -8,6 +8,8 @@
 *.html
 *.xlsx
 *.csv
+/data_archive/*
 /app/data/*
+/app/rsconnect/*
 /sandbox/*
 /analysis/inputs/*.txt
