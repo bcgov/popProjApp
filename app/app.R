@@ -303,12 +303,13 @@ server <- function(input, output, session) {
   
   ## select type of age group, just one
   output$Age_Type <- renderUI({
-    radioButtons(inputId = "Age_Type:",
+    radioButtons(inputId = "Age_Type",
                  label = NULL,
-                 choices = c("Single Year Age Groups", "5-year Age Groups", "Totals", "Custom Age Groups"),
+                 choices = c("Single Year Age Groups", "5-year Age Groups", "Totals", 
+                             "Custom Age Groups" = "custom"),
                  selected = "Totals")
   })
-
+  
   ## example table for custom age groups (as text to keep decimals out)
   output$example_table <- renderTable({
     matrix(data = c("15", "24",  "25", "54",  "55", "64",  "65", "74"),
@@ -431,7 +432,8 @@ server <- function(input, output, session) {
 
     }
 
-    if(input$Age_Type == "Custom Age Groups") {
+    # if(input$Age_Type == "Custom Age Groups") {
+    if(input$Age_Type == "custom") {
 
       ## 0a. create data frame of custom age groups user typed in
       custom_ages <- data.frame(S = c(input$start1, input$start2, input$start3, input$start4),
